@@ -325,7 +325,7 @@ const Home = () => {
           <p>A proven 5-step process to deliver exceptional digital solutions</p>
         </div>
         <div className="row">
-          <div className="col-md-3 mt-4">
+          <div className="col-md-3 col-12 mt-4">
             <div className="workflow-step">
               <div className="step-number">01</div>
               <div className="step-icon">
@@ -335,7 +335,7 @@ const Home = () => {
               <p>Codex Tech Solutions analyzes your requirements, understands your goals, and creates a strategic roadmap for your project.</p>
             </div>
           </div>
-          <div className="col-md-3 mt-4">
+          <div className="col-md-3 col-12 mt-4">
             <div className="workflow-step">
               <div className="step-number">02</div>
               <div className="step-icon">
@@ -345,7 +345,7 @@ const Home = () => {
               <p>Codex Tech Solutions creates stunning visual designs and user experiences that align with your brand and objectives.</p>
             </div>
           </div>
-          <div className="col-md-3 mt-4">
+          <div className="col-md-3 col-12 mt-4">
             <div className="workflow-step">
               <div className="step-number">03</div>
               <div className="step-icon">
@@ -355,7 +355,7 @@ const Home = () => {
               <p>Codex Tech Solutions builds your solution with clean, scalable code using modern technologies and best practices.</p>
             </div>
           </div>
-          <div className="col-md-3 mt-4">
+          <div className="col-md-3 col-12 mt-4">
             <div className="workflow-step">
               <div className="step-number">04</div>
               <div className="step-icon">
@@ -376,7 +376,7 @@ const Home = () => {
               <h2>Why Choose Us</h2>
               <p>Codex Tech Solutions delivers innovative websites, powerful digital marketing, reliable support, transparent communication, and measurable results to help your business grow faster.</p>
               <div className="why-choose-features row">
-                <div className="col-md-6 col-5">
+                <div className="col-md-6 col-12">
                   <div className="feature-card">
                     <div className="card-left">
                       <span className="card-number">1</span>
@@ -397,7 +397,7 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-                <div className="col-md-6 col-5">
+                <div className="col-md-6 col-12">
                   <div className="feature-card">
                     <div className="card-left">
                       <span className="card-number">2</span>
@@ -416,7 +416,7 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-                <div className="col-md-6 col-5">
+                <div className="col-md-6 col-12">
                   <div className="feature-card">
                     <div className="card-left">
                       <span className="card-number">3</span>
@@ -435,7 +435,7 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-                <div className="col-md-6 col-5">
+                <div className="col-md-6 col-12">
                   <div className="feature-card">
                     <div className="card-left">
                       <span className="card-number">4</span>
