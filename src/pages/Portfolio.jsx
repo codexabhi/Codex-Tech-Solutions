@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 
 const Portfolio = () => {
   const { isAuthenticated } = useAuth();
@@ -82,15 +80,7 @@ const Portfolio = () => {
 
   return (
     <>
-      <Header />
-      <section className="inner-hero">
-        <div className="hero-content">
-          <div className="hero-text">
-            <h1>{id ? 'Edit' : 'Create'} <span>Portfolio</span></h1>
-            <p>{id ? 'Update your portfolio item' : 'Add a new project to your portfolio'}</p>
-          </div>
-        </div>
-      </section>
+    
 
       <section className="py-5">
         <div className="container">
@@ -229,7 +219,6 @@ const Portfolio = () => {
           </div>
         </div>
       </section>
-      <Footer />
     </>
   );
 };

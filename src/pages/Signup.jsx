@@ -10,9 +10,9 @@ const Signup = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -28,18 +28,21 @@ const Signup = () => {
       setError('Passwords do not match');
       return;
     }
-    
-    const result = await signup(formData.name, formData.email, formData.password);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+    setSubmitting(true);
+    try {
+      const result = await signup(formData.name, formData.email, formData.password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -51,7 +54,7 @@ const Signup = () => {
       alignItems: 'center',
       zIndex: 9999
     }}>
-      <div style={{
+      <div className="auth-card" style={{
         background: '#111',
         padding: '2rem',
         borderRadius: '20px',
@@ -60,7 +63,7 @@ const Signup = () => {
         border: '1px solid #333',
         boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
       }}>
-        <h2 className="text-center mb-4" style={{color: '#fff'}}>Sign Up</h2>
+        <h2 className="text-center mb-2" style={{color: '#fff'}}>Create your account</h2>
         {error && (
           <div className="alert alert-danger" role="alert">
             {error}
@@ -143,7 +146,9 @@ const Signup = () => {
               }}
             />
           </div>
-          <button type="submit" className="submit-btn w-100">Sign Up</button>
+          <button type="submit" className="submit-btn w-100" disabled={submitting}>
+            {submitting ? <><i className="fas fa-spinner fa-spin"></i> Creating account...</> : 'Create account'}
+          </button>
         </form>
         <p className="text-center mt-3" style={{color: '#a1a1aa'}}>
           Already have an account? <Link to="/login" style={{color: '#FCE28E'}}>Login</Link>

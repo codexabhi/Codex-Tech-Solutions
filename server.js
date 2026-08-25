@@ -14,7 +14,10 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 10000,
+  connectTimeoutMS: 10000
+})
   .then(async () => {
     console.log('MongoDB connected successfully');
     
@@ -29,14 +32,23 @@ mongoose.connect(MONGODB_URI)
         console.log('No username index to drop or already cleaned');
       }
     }
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   })
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .catch((err) => {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
+  });
 
 // User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  mobile: { type: String, default: '' },
+  enrolledProgram: { type: String, default: 'web-applications' },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   createdAt: { type: Date, default: Date.now }
 });
@@ -80,10 +92,29 @@ const contactSchema = new mongoose.Schema({
 
 const Contact = mongoose.model('Contact', contactSchema);
 
+const taskSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  summary: String,
+  description: String,
+  type: { type: String, default: 'Support' },
+  source: { type: String, default: 'Admin' },
+  dueDate: String,
+  crmLink: String,
+  customer: String,
+  project: String,
+  assignedTo: { type: String, required: true },
+  priority: { type: String, default: 'Normal' },
+  status: { type: String, default: 'Open' },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Task = mongoose.model('Task', taskSchema);
+
 // Auth Routes
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, enrolledProgram } = req.body;
     
     console.log('Signup request received:', { name, email });
     
@@ -101,7 +132,8 @@ app.post('/api/auth/signup', async (req, res) => {
     const user = new User({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      enrolledProgram: enrolledProgram || 'web-applications'
     });
     
     await user.save();
@@ -110,7 +142,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // Generate token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1h' });
     
-    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, enrolledProgram: user.enrolledProgram, createdAt: user.createdAt } });
   } catch (error) {
     console.error('Signup error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -136,7 +168,7 @@ app.post('/api/auth/login', async (req, res) => {
     // Generate token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1h' });
     
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, enrolledProgram: user.enrolledProgram || (user.enrolledCourse === 'web-development' ? 'web-applications' : user.enrolledCourse), createdAt: user.createdAt } });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -284,6 +316,45 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+app.get('/api/tasks', authenticateToken, async (req, res) => {
+  try {
+    const tasks = await Task.find().sort({ createdAt: -1 });
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+app.post('/api/tasks', authenticateToken, async (req, res) => {
+  try {
+    const task = new Task({ ...req.body, createdBy: req.user.userId });
+    await task.save();
+    res.status(201).json(task);
+  } catch (error) {
+    res.status(400).json({ message: 'Unable to create task', error: error.message });
+  }
+});
+
+app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    res.json(task);
+  } catch (error) {
+    res.status(400).json({ message: 'Unable to update task', error: error.message });
+  }
+});
+
+app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const task = await Task.findByIdAndDelete(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    res.json({ message: 'Task deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Unable to delete task', error: error.message });
+  }
+});
+
 // Get all contacts (Admin only)
 app.get('/api/contacts', authenticateToken, async (req, res) => {
   try {
@@ -309,6 +380,22 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
+app.put('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const { name, email, mobile } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { name, email, mobile: mobile || '' },
+      { new: true, runValidators: true }
+    ).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    if (error.code === 11000) return res.status(400).json({ message: 'That email address is already in use' });
+    res.status(400).json({ message: 'Unable to update profile', error: error.message });
+  }
+});
+
 // Temporary endpoint to clear all users (for testing only)
 app.delete('/api/users/clear', async (req, res) => {
   try {
@@ -319,6 +406,3 @@ app.delete('/api/users/clear', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});

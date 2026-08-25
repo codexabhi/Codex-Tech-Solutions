@@ -2,6 +2,11 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -26,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/user/profile', {
+      const response = await api.get('/user/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(response.data);
@@ -41,7 +46,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await api.post('/auth/login', {
         email,
         password
       });
@@ -50,16 +55,18 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        message: error.code === 'ECONNABORTED' || !error.response
+          ? 'Unable to reach the server. Please start the API server and try again.'
+          : error.response.data?.message || 'Login failed'
       };
     }
   };
 
   const signup = async (name, email, password) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/signup', {
+      const response = await api.post('/auth/signup', {
         name,
         email,
         password
@@ -72,10 +79,14 @@ export const AuthProvider = ({ children }) => {
       console.error('Signup error:', error);
       return { 
         success: false, 
-        message: error.response?.data?.message || error.message || 'Signup failed' 
+        message: error.code === 'ECONNABORTED' || !error.response
+          ? 'Unable to reach the server. Please start the API server and try again.'
+          : error.response.data?.message || 'Signup failed'
       };
     }
   };
+
+  const updateUser = (updatedUser) => setUser(updatedUser);
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -89,6 +100,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     signup,
+    updateUser,
     logout,
     isAuthenticated: !!user
   };
